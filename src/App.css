@@ -368,6 +368,17 @@
   gap: 20px;
 }
 
+.chart-help-text {
+  font-size: 0.9rem;
+  color: #667eea;
+  font-weight: 500;
+  padding: 10px 15px;
+  background: #f0f2ff;
+  border-radius: 6px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
 .zoom-reset-btn {
   padding: 10px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

@@ -636,6 +636,8 @@ function App() {
                         <h3>1 {selectedCurrency} = {exchangeRates[selectedCurrency] > 0 ? (1 / exchangeRates[selectedCurrency]).toFixed(2) : '0'} TRY</h3>
                         <p className="current-rate">
                           Min: {minRate.toFixed(4)} TRY | Max: {maxRate.toFixed(4)} TRY
+                          {zoomStart !== null && zoomEnd === null && ' | 📍 İkinci noktayı seç'}
+                          {zoomStart !== null && zoomEnd !== null && ' | ✅ Zoom aktif'}
                         </p>
                       </div>
                       {zoomStart !== null && zoomEnd !== null && (
@@ -644,6 +646,10 @@ function App() {
                         </button>
                       )}
                     </div>
+                  </div>
+
+                  <div className="chart-help-text">
+                    💡 Zoom için grafikteki noktalardan herhangi ikisine tıkla
                   </div>
 
                   <ResponsiveContainer width="100%" height={450}>
@@ -680,7 +686,20 @@ function App() {
                         dataKey="rate" 
                         stroke="#667eea" 
                         strokeWidth={3}
-                        dot={{ fill: '#667eea', r: 4 }}
+                        dot={(props) => {
+                          const { cx, cy, payload } = props
+                          const isSelectable = zoomStart === payload.index || zoomEnd === payload.index
+                          return (
+                            <circle
+                              cx={cx}
+                              cy={cy}
+                              r={isSelectable ? 7 : 4}
+                              fill={isSelectable ? '#f5d547' : '#667eea'}
+                              onClick={() => handleChartDotClick(payload)}
+                              style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+                            />
+                          )
+                        }}
                         activeDot={{ r: 6 }}
                         name={`1 ${selectedCurrency} = ? TRY`}
                       />
