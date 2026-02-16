@@ -69,6 +69,7 @@ function App() {
     BHD: 0,
   })
   const [tlAmount, setTlAmount] = useState('')
+  const [goldGramAmount, setGoldGramAmount] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('calculator')
@@ -120,7 +121,9 @@ function App() {
 
   const chartData = timeframe === 'weekly' 
     ? generateMockData(selectedCurrency, 7) 
-    : generateMockData(selectedCurrency, 30)
+    : timeframe === 'monthly'
+    ? generateMockData(selectedCurrency, 30)
+    : generateMockData(selectedCurrency, 365)
 
   return (
     <div className="app">
@@ -144,16 +147,16 @@ function App() {
                 🧮 Hesaplayıcı
               </button>
               <button 
-                className={`tab-button ${activeTab === 'charts' ? 'active' : ''}`}
-                onClick={() => setActiveTab('charts')}
-              >
-                📈 Grafik Analizi
-              </button>
-              <button 
                 className={`tab-button ${activeTab === 'gold' ? 'active' : ''}`}
                 onClick={() => setActiveTab('gold')}
               >
                 ✨ Altın Fiyatları
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'charts' ? 'active' : ''}`}
+                onClick={() => setActiveTab('charts')}
+              >
+                📈 Grafik Analizi
               </button>
             </div>
 
@@ -194,52 +197,97 @@ function App() {
 
             {/* Gold Tab */}
             {activeTab === 'gold' && (
-              <div className="gold-section">
-                <div className="gold-header">
-                  <h2>✨ Altın Fiyatları</h2>
-                  <p>Güncel tarafından sağlanan altın fiyatları (TRY)</p>
+              <div className="gold-container">
+                <div className="input-section-compact">
+                  <label htmlFor="gold-input">Gram Altın Miktarı</label>
+                  <input
+                    id="gold-input"
+                    type="number"
+                    placeholder="0.00"
+                    value={goldGramAmount}
+                    onChange={(e) => setGoldGramAmount(e.target.value)}
+                    min="0"
+                    step="0.01"
+                    className="tl-input-compact"
+                  />
                 </div>
 
-                <div className="gold-prices-grid">
-                  <div className="gold-card">
-                    <div className="gold-card-icon">📍</div>
-                    <div className="gold-card-name">Gram Altın</div>
-                    <div className="gold-card-price">₺{goldPrices.gram.toLocaleString('tr-TR')}</div>
+                <div className="gold-prices-list">
+                  <div className="gold-item">
+                    <div className="gold-item-header">
+                      <span className="gold-type">📍 Gram Altın</span>
+                      <span className="gold-rate">₺{goldPrices.gram.toLocaleString('tr-TR')}/gram</span>
+                    </div>
+                    {goldGramAmount && (
+                      <div className="gold-item-result">
+                        ₺{(parseFloat(goldGramAmount) * goldPrices.gram).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="gold-card">
-                    <div className="gold-card-icon">⬜</div>
-                    <div className="gold-card-name">Çeyrek Altın</div>
-                    <div className="gold-card-price">₺{goldPrices.ceyrek.toLocaleString('tr-TR')}</div>
+                  <div className="gold-item">
+                    <div className="gold-item-header">
+                      <span className="gold-type">⬜ Çeyrek Altın</span>
+                      <span className="gold-rate">₺{goldPrices.ceyrek.toLocaleString('tr-TR')}</span>
+                    </div>
+                    {goldGramAmount && (
+                      <div className="gold-item-result">
+                        {(parseFloat(goldGramAmount) * goldPrices.gram / goldPrices.ceyrek).toFixed(4)} adet (₺{(parseFloat(goldGramAmount) * goldPrices.gram).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </div>
+                    )}
                   </div>
 
-                  <div className="gold-card">
-                    <div className="gold-card-icon">⬛</div>
-                    <div className="gold-card-name">Yarım Altın</div>
-                    <div className="gold-card-price">₺{goldPrices.yarim.toLocaleString('tr-TR')}</div>
+                  <div className="gold-item">
+                    <div className="gold-item-header">
+                      <span className="gold-type">⬛ Yarım Altın</span>
+                      <span className="gold-rate">₺{goldPrices.yarim.toLocaleString('tr-TR')}</span>
+                    </div>
+                    {goldGramAmount && (
+                      <div className="gold-item-result">
+                        {(parseFloat(goldGramAmount) * goldPrices.gram / goldPrices.yarim).toFixed(4)} adet (₺{(parseFloat(goldGramAmount) * goldPrices.gram).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </div>
+                    )}
                   </div>
 
-                  <div className="gold-card">
-                    <div className="gold-card-icon">☀️</div>
-                    <div className="gold-card-name">Tam Altın</div>
-                    <div className="gold-card-price">₺{goldPrices.tam.toLocaleString('tr-TR')}</div>
+                  <div className="gold-item">
+                    <div className="gold-item-header">
+                      <span className="gold-type">☀️ Tam Altın</span>
+                      <span className="gold-rate">₺{goldPrices.tam.toLocaleString('tr-TR')}</span>
+                    </div>
+                    {goldGramAmount && (
+                      <div className="gold-item-result">
+                        {(parseFloat(goldGramAmount) * goldPrices.gram / goldPrices.tam).toFixed(4)} adet (₺{(parseFloat(goldGramAmount) * goldPrices.gram).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </div>
+                    )}
                   </div>
 
-                  <div className="gold-card">
-                    <div className="gold-card-icon">👑</div>
-                    <div className="gold-card-name">Cumhuriyet Altını</div>
-                    <div className="gold-card-price">₺{goldPrices.cumhuriyet.toLocaleString('tr-TR')}</div>
+                  <div className="gold-item">
+                    <div className="gold-item-header">
+                      <span className="gold-type">👑 Cumhuriyet Altını</span>
+                      <span className="gold-rate">₺{goldPrices.cumhuriyet.toLocaleString('tr-TR')}</span>
+                    </div>
+                    {goldGramAmount && (
+                      <div className="gold-item-result">
+                        {(parseFloat(goldGramAmount) * goldPrices.gram / goldPrices.cumhuriyet).toFixed(4)} adet (₺{(parseFloat(goldGramAmount) * goldPrices.gram).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </div>
+                    )}
                   </div>
 
-                  <div className="gold-card">
-                    <div className="gold-card-icon">🦅</div>
-                    <div className="gold-card-name">Ata Altını</div>
-                    <div className="gold-card-price">₺{goldPrices.ata.toLocaleString('tr-TR')}</div>
+                  <div className="gold-item">
+                    <div className="gold-item-header">
+                      <span className="gold-type">🦅 Ata Altını</span>
+                      <span className="gold-rate">₺{goldPrices.ata.toLocaleString('tr-TR')}</span>
+                    </div>
+                    {goldGramAmount && (
+                      <div className="gold-item-result">
+                        {(parseFloat(goldGramAmount) * goldPrices.gram / goldPrices.ata).toFixed(4)} adet (₺{(parseFloat(goldGramAmount) * goldPrices.gram).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="gold-info">
-                  <h3>Altın Türleri Hakkında</h3>
+                  <h3>📌 Altın Türleri Hakkında</h3>
                   <ul className="gold-info-list">
                     <li><strong>Gram Altın:</strong> 1 gramdan başlayan saf altın</li>
                     <li><strong>Çeyrek Altın:</strong> 1/4 ons (yaklaşık 7.776g) 22 ayar altın</li>
@@ -287,6 +335,12 @@ function App() {
                       >
                         📆 Aylık
                       </button>
+                      <button 
+                        className={`timeframe-btn ${timeframe === 'yearly' ? 'active' : ''}`}
+                        onClick={() => setTimeframe('yearly')}
+                      >
+                        📊 1 Yıllık
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -305,9 +359,9 @@ function App() {
                       <XAxis 
                         dataKey="date" 
                         tick={{ fill: '#666', fontSize: 12 }}
-                        angle={timeframe === 'monthly' ? -45 : 0}
-                        textAnchor={timeframe === 'monthly' ? 'end' : 'middle'}
-                        height={timeframe === 'monthly' ? 80 : 40}
+                        angle={timeframe !== 'weekly' ? -45 : 0}
+                        textAnchor={timeframe !== 'weekly' ? 'end' : 'middle'}
+                        height={timeframe !== 'weekly' ? 80 : 40}
                       />
                       <YAxis 
                         tick={{ fill: '#666', fontSize: 12 }}
