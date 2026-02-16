@@ -130,7 +130,7 @@ function App() {
   const [zoomEnd, setZoomEnd] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
 
-  // Döviz kurlarını API'den çek
+  // Döviz kurlarını ve altın fiyatlarını API'den çek
   useEffect(() => {
     const fetchExchangeRates = async () => {
       try {
@@ -147,6 +147,41 @@ function App() {
         })
         
         setExchangeRates(filtered)
+        
+        // Altın fiyatlarını API'den al
+        try {
+          const goldResponse = await fetch('https://api.metals.live/v1/spot/gold')
+          const goldData = await goldResponse.json()
+          
+          // XAU (ons cinsinden) USD fiyatı
+          const xauUsd = goldData.gold.usd || 2000
+          // USD'den TRY'ye çevir
+          const usdToTry = data.rates.USD || 35
+          // Gram cinsinden TRY fiyatı (1 ons = 31.1035 gram)
+          const gramPrice = (xauUsd * usdToTry) / 31.1035
+          
+          // Standart altın türleri (gram cinsinden ağırlıkları)
+          setGoldPrices({
+            gram: Math.round(gramPrice * 100) / 100, // 1 gram
+            ceyrek: Math.round(gramPrice * 7.776 * 100) / 100, // 1/4 ons = 7.776g
+            yarim: Math.round(gramPrice * 15.552 * 100) / 100, // 1/2 ons = 15.552g
+            tam: Math.round(gramPrice * 31.1035 * 100) / 100, // 1 ons = 31.1035g (full ons)
+            cumhuriyet: Math.round(gramPrice * 32 * 100) / 100, // ~32g (historical coin)
+            ata: Math.round(gramPrice * 32 * 100) / 100 // ~32g (historical coin)
+          })
+        } catch (goldErr) {
+          console.error('Altın fiyatları alınamadı:', goldErr)
+          // Hata durumunda mock values kullan
+          setGoldPrices({
+            gram: 2800,
+            ceyrek: 21774,
+            yarim: 43509,
+            tam: 87062,
+            cumhuriyet: 89600,
+            ata: 89600
+          })
+        }
+        
         setError(null)
       } catch (err) {
         setError('Döviz kurları yüklenirken hata oluştu')
