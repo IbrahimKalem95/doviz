@@ -78,6 +78,7 @@ function App() {
     BHD: 0,
   })
   const [tlAmount, setTlAmount] = useState('')
+  const [baseCurrency, setBaseCurrency] = useState('TRY')
   const [goldGramAmount, setGoldGramAmount] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -128,6 +129,16 @@ function App() {
     
     return () => clearInterval(interval)
   }, [])
+
+  const handleAmountChange = (value) => {
+    setTlAmount(value)
+  }
+
+  // Para birimini değiştir
+  const handleCurrencySwitch = (currency) => {
+    setBaseCurrency(currency)
+    setTlAmount('')
+  }
 
   // Feature request ekle ve kaydet
   const handleSubmitFeatureRequest = async () => {
@@ -240,7 +251,7 @@ function App() {
             {activeTab === 'calculator' && (
               <div className="calculator-container">
                 <div className="input-section-compact">
-                  <label htmlFor="tl-input">Türk Lirası (TRY)</label>
+                  <label htmlFor="tl-input">{baseCurrency}</label>
                   <input
                     id="tl-input"
                     type="number"
@@ -254,19 +265,40 @@ function App() {
                 </div>
 
                 <div className="rates-list">
-                  {Object.entries(exchangeRates).map(([currency, rate]) => (
-                    <div key={currency} className="rate-item">
-                      <div className="rate-item-header">
-                        <span className="currency-code">{currency}</span>
-                        <span className="rate-info">1 TRY = {rate.toFixed(4)}</span>
-                      </div>
-                      {tlAmount && (
-                        <div className="rate-item-result">
-                          {(parseFloat(tlAmount) * rate).toFixed(2)} {currency}
+                  {Object.entries(exchangeRates)
+                    .filter(([currency]) => currency !== baseCurrency)
+                    .map(([currency, rate]) => {
+                      let displayRate, calculation;
+                      
+                      if (baseCurrency === 'TRY') {
+                        displayRate = `1 TRY = ${rate.toFixed(4)}`;
+                        calculation = tlAmount ? (parseFloat(tlAmount) * rate).toFixed(2) : null;
+                      } else {
+                        // Base currency TRY değilse, kur terslenecek
+                        const baseRate = exchangeRates[baseCurrency];
+                        displayRate = baseRate > 0 ? `1 ${baseCurrency} = ${(rate / baseRate).toFixed(4)}` : `1 ${baseCurrency} = ?`;
+                        calculation = tlAmount && baseRate > 0 ? (parseFloat(tlAmount) * (rate / baseRate)).toFixed(2) : null;
+                      }
+                      
+                      return (
+                        <div 
+                          key={currency} 
+                          className="rate-item"
+                          onClick={() => handleCurrencySwitch(currency)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="rate-item-header">
+                            <span className="currency-code">{currency}</span>
+                            <span className="rate-info">{displayRate}</span>
+                          </div>
+                          {calculation && (
+                            <div className="rate-item-result">
+                              {calculation} {currency}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      )
+                    })}
                 </div>
               </div>
             )}
