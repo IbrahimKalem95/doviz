@@ -2,6 +2,38 @@ import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import './App.css'
 
+// İçerik kontrol - uygunsuz söylemleri filtrele
+const containsInappropriateContent = (text) => {
+  if (!text) return false
+  
+  const inappropriate = [
+    // Küfür ve ağır söylemleri filtrele (Türkçe)
+    /\b(aq|siktir|am|pislik|piç|salaklık|salak|oç|oc)\b/i,
+    // Siyasi söylemler
+    /\b(chp|akp|hdp|mhp|pkk|ergenekon)\b/i,
+    // Hacker/tehdit söylemleri
+    /\b(hack|crack|virus|malware|ddos|exploit|dos)\b/i,
+    // Spam linkler
+    /\b(http|https|\.com|bitly|tinyurl)\b/i,
+  ]
+  
+  return inappropriate.some(pattern => pattern.test(text))
+}
+
+// localStorage işlemleri
+const loadFeatureRequests = () => {
+  try {
+    const data = localStorage.getItem('featureRequests')
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+const saveFeatureRequests = (requests) => {
+  localStorage.setItem('featureRequests', JSON.stringify(requests))
+}
+
 // Mock veriler oluştur - API'den gelen base rate'i kullan
 const generateMockData = (currency, days, baseRate) => {
   const data = []
@@ -52,6 +84,12 @@ function App() {
   const [activeTab, setActiveTab] = useState('calculator')
   const [selectedCurrency, setSelectedCurrency] = useState('USD')
   const [timeframe, setTimeframe] = useState('weekly')
+  const [featureRequest, setFeatureRequest] = useState('')
+  const [featureRequests, setFeatureRequests] = useState([])
+  const [adminPassword, setAdminPassword] = useState('')
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
+  const [showRequestSuccess, setShowRequestSuccess] = useState(false)
+  const [requestError, setRequestError] = useState('')
   const [goldPrices, setGoldPrices] = useState({
     gram: 2850,
     ceyrek: 11400,
@@ -92,8 +130,89 @@ function App() {
     return () => clearInterval(interval)
   }, [])
 
+  // Feature requests'i yükle
+  useEffect(() => {
+    setFeatureRequests(loadFeatureRequests())
+  }, [])
+
   const handleAmountChange = (value) => {
     setTlAmount(value)
+  }
+
+  // Feature request ekle
+  const handleSubmitFeatureRequest = () => {
+    if (!featureRequest.trim()) {
+      setRequestError('Lütfen bir talep yazınız')
+      return
+    }
+
+    if (featureRequest.length < 10) {
+      setRequestError('Talep en az 10 karakter olmalıdır')
+      return
+    }
+
+    if (containsInappropriateContent(featureRequest)) {
+      setRequestError('Talep uygunsuz içerik barındırmaktadır')
+      return
+    }
+
+    const newRequest = {
+      id: Date.now(),
+      text: featureRequest,
+      date: new Date().toLocaleDateString('tr-TR'),
+      status: 'pending', // pending, approved, in-progress, completed
+      priority: 0
+    }
+
+    const updated = [...featureRequests, newRequest]
+    setFeatureRequests(updated)
+    saveFeatureRequests(updated)
+    
+    setFeatureRequest('')
+    setRequestError('')
+    setShowRequestSuccess(true)
+    setTimeout(() => setShowRequestSuccess(false), 3000)
+  }
+
+  // Admin giriş
+  const handleAdminLogin = () => {
+    if (adminPassword === 'doviz2026admin') {
+      setIsAdminLoggedIn(true)
+      setAdminPassword('')
+    } else {
+      setRequestError('Hatalı şifre')
+    }
+  }
+
+  // Admin çıkış
+  const handleAdminLogout = () => {
+    setIsAdminLoggedIn(false)
+    setAdminPassword('')
+  }
+
+  // Request status güncelle
+  const updateRequestStatus = (id, newStatus) => {
+    const updated = featureRequests.map(req => 
+      req.id === id ? { ...req, status: newStatus } : req
+    )
+    setFeatureRequests(updated)
+    saveFeatureRequests(updated)
+  }
+
+  // Request priority güncelle
+  const updateRequestPriority = (id, newPriority) => {
+    const updated = featureRequests.map(req => 
+      req.id === id ? { ...req, priority: newPriority } : req
+    )
+    setFeatureRequests(updated)
+    saveFeatureRequests(updated)
+  }
+
+  // Request sil
+  const deleteRequest = (id) => {
+    const updated = featureRequests.filter(req => req.id !== id)
+    setFeatureRequests(updated)
+    saveFeatureRequests(updated)
   }
 
   const chartData = timeframe === 'weekly' 
@@ -134,6 +253,18 @@ function App() {
                 onClick={() => setActiveTab('charts')}
               >
                 📈 Grafik Analizi
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'feedback' ? 'active' : ''}`}
+                onClick={() => setActiveTab('feedback')}
+              >
+                💬 Fikirler
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
+                onClick={() => setActiveTab('admin')}
+              >
+                🔐 Yönetici
               </button>
             </div>
 
@@ -274,6 +405,197 @@ function App() {
                     <li><strong>Ata Altını:</strong> Atatürk portresi olan koleksiyonluk altın madeni para</li>
                   </ul>
                 </div>
+              </div>
+            )}
+
+            {/* Feedback Tab */}
+            {activeTab === 'feedback' && (
+              <div className="feedback-section">
+                <div className="feedback-header">
+                  <h2>💬 Özellik Talebi</h2>
+                  <p>Sayfa ile ilgili fikirleriniz ve taleplerini paylaşın. Ek özelliklerin geliştirilmesine yardımcı olun!</p>
+                </div>
+
+                <div className="feedback-form">
+                  <div className="feedback-input-group">
+                    <label htmlFor="feature-request">Fikriniz</label>
+                    <textarea
+                      id="feature-request"
+                      placeholder="Örn: Grafiklere karşılaştırma özelliği eklenebilir..."
+                      value={featureRequest}
+                      onChange={(e) => {
+                        setFeatureRequest(e.target.value)
+                        setRequestError('')
+                      }}
+                      className="feedback-textarea"
+                      maxLength="500"
+                    />
+                    <div className="char-count">
+                      {featureRequest.length}/500
+                    </div>
+                  </div>
+
+                  {requestError && (
+                    <div className="error-message">
+                      ❌ {requestError}
+                    </div>
+                  )}
+
+                  {showRequestSuccess && (
+                    <div className="success-message">
+                      ✅ Fikriniz iletildi! Teşekkürler.
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={handleSubmitFeatureRequest}
+                    className="submit-feedback-btn"
+                  >
+                    Gönder
+                  </button>
+                </div>
+
+                <div className="feedback-stats">
+                  <div className="stat-item">
+                    <span className="stat-number">{featureRequests.length}</span>
+                    <span className="stat-label">Toplam Talep</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{featureRequests.filter(r => r.status === 'completed').length}</span>
+                    <span className="stat-label">Tamamlanan</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{featureRequests.filter(r => r.status === 'in-progress').length}</span>
+                    <span className="stat-label">Geliştirilen</span>
+                  </div>
+                </div>
+
+                <div className="pending-requests">
+                  <h3>⏳ Beklemede Olan Talepler (Sizin de oy verebileceğiniz)</h3>
+                  {featureRequests.filter(r => r.status === 'pending').length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#999' }}>Şu anda beklemede talep yok</p>
+                  ) : (
+                    <div className="requests-list">
+                      {featureRequests
+                        .filter(r => r.status === 'pending')
+                        .map(req => (
+                          <div key={req.id} className="request-item-display">
+                            <div className="request-text">{req.text}</div>
+                            <div className="request-meta">{req.date}</div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Admin Panel */}
+            {activeTab === 'admin' && (
+              <div className="admin-section">
+                {!isAdminLoggedIn ? (
+                  <div className="admin-login">
+                    <div className="admin-login-box">
+                      <h2>🔐 Yönetici Girişi</h2>
+                      <input
+                        type="password"
+                        placeholder="Şifre girin"
+                        value={adminPassword}
+                        onChange={(e) => {
+                          setAdminPassword(e.target.value)
+                          setRequestError('')
+                        }}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()}
+                        className="admin-password-input"
+                      />
+                      {requestError && (
+                        <div className="error-message">{requestError}</div>
+                      )}
+                      <button onClick={handleAdminLogin} className="admin-login-btn">
+                        Giriş Yap
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="admin-panel">
+                    <div className="admin-header">
+                      <h2>🔐 Yönetici Paneli</h2>
+                      <button onClick={handleAdminLogout} className="logout-btn">Çıkış Yap</button>
+                    </div>
+
+                    <div className="admin-stats">
+                      <div className="stat-box">
+                        <div className="stat-number">{featureRequests.length}</div>
+                        <div className="stat-title">Toplam</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-number">{featureRequests.filter(r => r.status === 'pending').length}</div>
+                        <div className="stat-title">Beklemede</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-number">{featureRequests.filter(r => r.status === 'approved').length}</div>
+                        <div className="stat-title">Onaylanmış</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-number">{featureRequests.filter(r => r.status === 'in-progress').length}</div>
+                        <div className="stat-title">Geliştirilen</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-number">{featureRequests.filter(r => r.status === 'completed').length}</div>
+                        <div className="stat-title">Tamamlanan</div>
+                      </div>
+                    </div>
+
+                    <div className="admin-requests">
+                      <h3>📋 Tüm Talepler</h3>
+                      {featureRequests.length === 0 ? (
+                        <p>Talep bulunmuyor</p>
+                      ) : (
+                        <div className="requests-table">
+                          {featureRequests
+                            .sort((a, b) => b.priority - a.priority)
+                            .map(req => (
+                              <div key={req.id} className="admin-request-item">
+                                <div className="request-content">
+                                  <div className="request-text-admin">{req.text}</div>
+                                  <div className="request-date">{req.date}</div>
+                                </div>
+                                <div className="request-controls">
+                                  <select
+                                    value={req.status}
+                                    onChange={(e) => updateRequestStatus(req.id, e.target.value)}
+                                    className="status-select"
+                                  >
+                                    <option value="pending">Beklemede</option>
+                                    <option value="approved">Onaylandı</option>
+                                    <option value="in-progress">Geliştiriliyor</option>
+                                    <option value="completed">Tamamlandı</option>
+                                  </select>
+
+                                  <select
+                                    value={req.priority}
+                                    onChange={(e) => updateRequestPriority(req.id, parseInt(e.target.value))}
+                                    className="priority-select"
+                                  >
+                                    <option value="0">Öncelik: Düşük</option>
+                                    <option value="1">Öncelik: Orta</option>
+                                    <option value="2">Öncelik: Yüksek</option>
+                                  </select>
+
+                                  <button
+                                    onClick={() => deleteRequest(req.id)}
+                                    className="delete-btn"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
