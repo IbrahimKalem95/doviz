@@ -512,10 +512,9 @@
   border-radius: 15px;
   padding: 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  display: grid;
-  grid-template-columns: 200px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 30px;
-  align-items: start;
 }
 
 .gold-container .input-section-compact {
@@ -523,6 +522,47 @@
   padding: 20px;
   border-radius: 10px;
   border: none;
+  position: relative;
+}
+
+.gold-input-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.gold-input-section .input-section-compact {
+  flex: 1;
+  background: white;
+  border: 2px solid #e0e0e0;
+  margin: 0;
+  padding: 15px;
+  transition: all 0.3s ease;
+}
+
+.gold-input-section .input-section-compact:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+}
+
+.input-unit {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.9rem;
+}
+
+.swap-divider {
+  font-size: 1.5rem;
+  color: #667eea;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .gold-prices-list {

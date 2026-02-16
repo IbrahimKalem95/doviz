@@ -108,6 +108,7 @@ function App() {
   const [tlAmount, setTlAmount] = useState('')
   const [baseCurrency, setBaseCurrency] = useState('TRY')
   const [goldGramAmount, setGoldGramAmount] = useState('')
+  const [goldTlAmount, setGoldTlAmount] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('calculator')
@@ -206,6 +207,28 @@ function App() {
   const handleCurrencySwitch = (currency) => {
     setBaseCurrency(currency)
     setTlAmount('')
+  }
+
+  // Altın gram → TL çevirimi
+  const handleGoldGramChange = (value) => {
+    setGoldGramAmount(value)
+    if (value && goldPrices.gram > 0) {
+      const tlValue = parseFloat(value) * goldPrices.gram
+      setGoldTlAmount(tlValue.toFixed(2))
+    } else {
+      setGoldTlAmount('')
+    }
+  }
+
+  // Altın TL → gram çevirimi
+  const handleGoldTlChange = (value) => {
+    setGoldTlAmount(value)
+    if (value && goldPrices.gram > 0) {
+      const gramValue = parseFloat(value) / goldPrices.gram
+      setGoldGramAmount(gramValue.toFixed(4))
+    } else {
+      setGoldGramAmount('')
+    }
   }
 
   // Feature request ekle ve kaydet
@@ -418,18 +441,38 @@ function App() {
             {/* Gold Tab */}
             {activeTab === 'gold' && (
               <div className="gold-container">
-                <div className="input-section-compact">
-                  <label htmlFor="gold-input">Gram Altın Miktarı</label>
-                  <input
-                    id="gold-input"
-                    type="number"
-                    placeholder="0.00"
-                    value={goldGramAmount}
-                    onChange={(e) => setGoldGramAmount(e.target.value)}
-                    min="0"
-                    step="0.01"
-                    className="tl-input-compact"
-                  />
+                <div className="gold-input-section">
+                  <div className="input-section-compact">
+                    <label htmlFor="gold-input">Gram Altın</label>
+                    <input
+                      id="gold-input"
+                      type="number"
+                      placeholder="0.00"
+                      value={goldGramAmount}
+                      onChange={(e) => handleGoldGramChange(e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="tl-input-compact"
+                    />
+                    <span className="input-unit">g</span>
+                  </div>
+
+                  <div className="swap-divider">⇕</div>
+
+                  <div className="input-section-compact">
+                    <label htmlFor="gold-tl-input">Türk Lirası</label>
+                    <input
+                      id="gold-tl-input"
+                      type="number"
+                      placeholder="0.00"
+                      value={goldTlAmount}
+                      onChange={(e) => handleGoldTlChange(e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="tl-input-compact"
+                    />
+                    <span className="input-unit">₺</span>
+                  </div>
                 </div>
 
                 <div className="gold-prices-list">
