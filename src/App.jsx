@@ -35,22 +35,49 @@ const saveFeatureRequests = (requests) => {
 }
 
 // Mock veriler oluştur - API'den gelen base rate'i kullan
-const generateMockData = (currency, days, baseRate) => {
+const generateMockData = (currency, days, baseRate, timeframe = 'weekly') => {
   const data = []
-  
   const rate = baseRate || 30
   
-  for (let i = days; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
-    // Günlük varyans %1-2 arasında
-    const variancePercent = (Math.random() - 0.5) * 0.02
-    const variance = rate * variancePercent
-    data.push({
-      date: date.toLocaleDateString('tr-TR', { month: '2-digit', day: '2-digit' }),
-      fullDate: date.toLocaleDateString('tr-TR'),
-      rate: parseFloat((rate + variance).toFixed(4))
-    })
+  // Yıllık veri için ay başı ve ay sonı göster
+  if (timeframe === 'yearly') {
+    for (let month = 0; month < 12; month++) {
+      // Ay başı
+      const firstDay = new Date()
+      firstDay.setMonth(firstDay.getMonth() - (11 - month))
+      firstDay.setDate(1)
+      const variancePercent1 = (Math.random() - 0.5) * 0.02
+      const variance1 = rate * variancePercent1
+      data.push({
+        date: firstDay.toLocaleDateString('tr-TR', { month: '2-digit', day: '2-digit' }),
+        fullDate: firstDay.toLocaleDateString('tr-TR'),
+        rate: parseFloat((rate + variance1).toFixed(4))
+      })
+      
+      // Ay sonu
+      const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0)
+      const variancePercent2 = (Math.random() - 0.5) * 0.02
+      const variance2 = rate * variancePercent2
+      data.push({
+        date: lastDay.toLocaleDateString('tr-TR', { month: '2-digit', day: '2-digit' }),
+        fullDate: lastDay.toLocaleDateString('tr-TR'),
+        rate: parseFloat((rate + variance2).toFixed(4))
+      })
+    }
+  } else {
+    // Haftalık ve aylık veri
+    for (let i = days; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      // Günlük varyans %1-2 arasında
+      const variancePercent = (Math.random() - 0.5) * 0.02
+      const variance = rate * variancePercent
+      data.push({
+        date: date.toLocaleDateString('tr-TR', { month: '2-digit', day: '2-digit' }),
+        fullDate: date.toLocaleDateString('tr-TR'),
+        rate: parseFloat((rate + variance).toFixed(4))
+      })
+    }
   }
   return data
 }
@@ -99,6 +126,9 @@ function App() {
     cumhuriyet: 50000,
     ata: 48000
   })
+  const [zoomStart, setZoomStart] = useState(null)
+  const [zoomEnd, setZoomEnd] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // Döviz kurlarını API'den çek
   useEffect(() => {
@@ -201,13 +231,49 @@ function App() {
     setShowRatingForm(false)
   }
 
-  // Talep gönder
-
-  const chartData = timeframe === 'weekly' 
-    ? generateMockData(selectedCurrency, 7, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0)
+  // Grafik verilerini oluştur
+  let fullChartData = timeframe === 'weekly' 
+    ? generateMockData(selectedCurrency, 7, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0, 'weekly')
     : timeframe === 'monthly'
-    ? generateMockData(selectedCurrency, 30, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0)
-    : generateMockData(selectedCurrency, 365, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0)
+    ? generateMockData(selectedCurrency, 30, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0, 'monthly')
+    : generateMockData(selectedCurrency, 365, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0, 'yearly')
+  
+  // Index ekle ve zoom uygulanmışsa filtrele
+  fullChartData = fullChartData.map((item, idx) => ({ ...item, index: idx }))
+  
+  let chartData = fullChartData
+  if (zoomStart !== null && zoomEnd !== null) {
+    const start = Math.min(zoomStart, zoomEnd)
+    const end = Math.max(zoomStart, zoomEnd)
+    chartData = fullChartData.slice(start, end + 1)
+  }
+  
+  // Dinamik Y-axis domain hesapla
+  const rates = chartData.map(d => d.rate)
+  const minRate = Math.min(...rates)
+  const maxRate = Math.max(...rates)
+  const padding = (maxRate - minRate) * 0.1 || 1
+  const yAxisDomain = [minRate - padding, maxRate + padding]
+  
+  // Zoom reset handler
+  const handleZoomReset = () => {
+    setZoomStart(null)
+    setZoomEnd(null)
+    setIsDragging(false)
+  }
+  
+  // Tooltip click handler
+  const handleChartDotClick = (data) => {
+    if (zoomStart === null) {
+      setZoomStart(data.index)
+    } else if (zoomEnd === null) {
+      setZoomEnd(data.index)
+    } else {
+      // Reset if both selected
+      setZoomStart(data.index)
+      setZoomEnd(null)
+    }
+  }
 
   return (
     <div className="app">
@@ -565,14 +631,26 @@ function App() {
 
                 <div className="chart-container">
                   <div className="chart-info">
-                    <h3>1 {selectedCurrency} = {exchangeRates[selectedCurrency] > 0 ? (1 / exchangeRates[selectedCurrency]).toFixed(2) : '0'} TRY (Son Veriler)</h3>
-                    <p className="current-rate">
-                      Mevcut Kur: {exchangeRates[selectedCurrency] > 0 ? (1 / exchangeRates[selectedCurrency]).toFixed(4) : '0'} TRY
-                    </p>
+                    <div className="chart-header-row">
+                      <div>
+                        <h3>1 {selectedCurrency} = {exchangeRates[selectedCurrency] > 0 ? (1 / exchangeRates[selectedCurrency]).toFixed(2) : '0'} TRY</h3>
+                        <p className="current-rate">
+                          Min: {minRate.toFixed(4)} TRY | Max: {maxRate.toFixed(4)} TRY
+                        </p>
+                      </div>
+                      {zoomStart !== null && zoomEnd !== null && (
+                        <button className="zoom-reset-btn" onClick={handleZoomReset}>
+                          🔄 Zoom Sıfırla
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={chartData}>
+                  <ResponsiveContainer width="100%" height={450}>
+                    <LineChart 
+                      data={chartData}
+                      margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                       <XAxis 
                         dataKey="date" 
@@ -584,6 +662,7 @@ function App() {
                       <YAxis 
                         tick={{ fill: '#666', fontSize: 12 }}
                         width={80}
+                        domain={[yAxisDomain[0], yAxisDomain[1]]}
                       />
                       <Tooltip 
                         formatter={(value) => value.toFixed(4)}

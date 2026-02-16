@@ -360,6 +360,32 @@
   border-radius: 10px;
 }
 
+.chart-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 20px;
+}
+
+.zoom-reset-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.zoom-reset-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
 .chart-info h3 {
   margin: 0;
   color: #333;
@@ -367,10 +393,10 @@
 }
 
 .current-rate {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #667eea;
+  margin: 8px 0 0 0;
+  font-size: 0.95rem;
+  color: #666;
+  font-weight: 500;
 }
 
 .chart-stats {
