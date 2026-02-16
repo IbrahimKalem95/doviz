@@ -74,6 +74,14 @@ function App() {
   const [activeTab, setActiveTab] = useState('calculator')
   const [selectedCurrency, setSelectedCurrency] = useState('USD')
   const [timeframe, setTimeframe] = useState('weekly')
+  const [goldPrices, setGoldPrices] = useState({
+    gram: 2850,
+    ceyrek: 11400,
+    yarim: 22800,
+    tam: 45600,
+    cumhuriyet: 50000,
+    ata: 48000
+  })
 
   // Döviz kurlarını API'den çek
   useEffect(() => {
@@ -141,6 +149,12 @@ function App() {
               >
                 📈 Grafik Analizi
               </button>
+              <button 
+                className={`tab-button ${activeTab === 'gold' ? 'active' : ''}`}
+                onClick={() => setActiveTab('gold')}
+              >
+                ✨ Altın Fiyatları
+              </button>
             </div>
 
             {/* Calculator Tab */}
@@ -174,6 +188,66 @@ function App() {
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Gold Tab */}
+            {activeTab === 'gold' && (
+              <div className="gold-section">
+                <div className="gold-header">
+                  <h2>✨ Altın Fiyatları</h2>
+                  <p>Güncel tarafından sağlanan altın fiyatları (TRY)</p>
+                </div>
+
+                <div className="gold-prices-grid">
+                  <div className="gold-card">
+                    <div className="gold-card-icon">📍</div>
+                    <div className="gold-card-name">Gram Altın</div>
+                    <div className="gold-card-price">₺{goldPrices.gram.toLocaleString('tr-TR')}</div>
+                  </div>
+
+                  <div className="gold-card">
+                    <div className="gold-card-icon">⬜</div>
+                    <div className="gold-card-name">Çeyrek Altın</div>
+                    <div className="gold-card-price">₺{goldPrices.ceyrek.toLocaleString('tr-TR')}</div>
+                  </div>
+
+                  <div className="gold-card">
+                    <div className="gold-card-icon">⬛</div>
+                    <div className="gold-card-name">Yarım Altın</div>
+                    <div className="gold-card-price">₺{goldPrices.yarim.toLocaleString('tr-TR')}</div>
+                  </div>
+
+                  <div className="gold-card">
+                    <div className="gold-card-icon">☀️</div>
+                    <div className="gold-card-name">Tam Altın</div>
+                    <div className="gold-card-price">₺{goldPrices.tam.toLocaleString('tr-TR')}</div>
+                  </div>
+
+                  <div className="gold-card">
+                    <div className="gold-card-icon">👑</div>
+                    <div className="gold-card-name">Cumhuriyet Altını</div>
+                    <div className="gold-card-price">₺{goldPrices.cumhuriyet.toLocaleString('tr-TR')}</div>
+                  </div>
+
+                  <div className="gold-card">
+                    <div className="gold-card-icon">🦅</div>
+                    <div className="gold-card-name">Ata Altını</div>
+                    <div className="gold-card-price">₺{goldPrices.ata.toLocaleString('tr-TR')}</div>
+                  </div>
+                </div>
+
+                <div className="gold-info">
+                  <h3>Altın Türleri Hakkında</h3>
+                  <ul className="gold-info-list">
+                    <li><strong>Gram Altın:</strong> 1 gramdan başlayan saf altın</li>
+                    <li><strong>Çeyrek Altın:</strong> 1/4 ons (yaklaşık 7.776g) 22 ayar altın</li>
+                    <li><strong>Yarım Altın:</strong> 1/2 ons (yaklaşık 15.552g) 22 ayar altın</li>
+                    <li><strong>Tam Altın:</strong> 1 ons (yaklaşık 31.104g) 22 ayar altın</li>
+                    <li><strong>Cumhuriyet Altını:</strong> 1923'ten beri basılan resmi madeni para</li>
+                    <li><strong>Ata Altını:</strong> Atatürk portresi olan koleksiyonluk altın madeni para</li>
+                  </ul>
                 </div>
               </div>
             )}
