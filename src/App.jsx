@@ -57,6 +57,7 @@ const generateMockData = (currency, days, baseRate) => {
 
 function App() {
   const [exchangeRates, setExchangeRates] = useState({
+    TRY: 1,
     USD: 0,
     EUR: 0,
     GBP: 0,
@@ -108,9 +109,11 @@ function App() {
         const data = await response.json()
         
         // İstediğimiz para birimlerini filtrele
-        const filtered = {}
+        const filtered = { TRY: 1 }
         Object.keys(exchangeRates).forEach(currency => {
-          filtered[currency] = data.rates[currency] || 0
+          if (currency !== 'TRY') {
+            filtered[currency] = data.rates[currency] || 0
+          }
         })
         
         setExchangeRates(filtered)
@@ -266,6 +269,15 @@ function App() {
 
                 <div className="rates-list">
                   {Object.entries(exchangeRates)
+                    .sort(([a], [b]) => {
+                      // TRY her zaman öne al
+                      if (a === 'TRY') return -1
+                      if (b === 'TRY') return 1
+                      // Sonra baseCurrency'yi öne al
+                      if (a === baseCurrency) return -1
+                      if (b === baseCurrency) return 1
+                      return 0
+                    })
                     .map(([currency, rate]) => {
                       let displayRate, calculation;
                       
