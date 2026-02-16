@@ -136,43 +136,42 @@ function App() {
     const fetchExchangeRates = async () => {
       try {
         setLoading(true)
-        const response = await fetch('https://api.exchangerate-api.com/v4/latest/TRY')
-        const data = await response.json()
+        
+        // TCMB'den kurlar ve altın fiyatını al
+        const tcmbResponse = await fetch('https://www.tcmb.gov.tr/kurlar/today.json')
+        const tcmbData = await tcmbResponse.json()
+        
+        // TCMB verisinde Veriler içinde para birimleri bulunuyor
+        const veriler = tcmbData.Veriler || []
         
         // İstediğimiz para birimlerini filtrele
         const filtered = { TRY: 1 }
-        Object.keys(exchangeRates).forEach(currency => {
-          if (currency !== 'TRY') {
-            filtered[currency] = data.rates[currency] || 0
+        const currenciesToFind = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNY', 'INR', 'SAR', 'AED', 'SEK', 'NOK', 'DKK', 'KWD', 'QAR', 'OMR', 'BHD']
+        
+        veriler.forEach(veri => {
+          if (currenciesToFind.includes(veri.Code)) {
+            // TCMB'de oran TRY cinsinden verilir (1 USD = 35.68 TRY)
+            // Biz bunu tersine çeviririz (1 TRY = ? USD)
+            filtered[veri.Code] = 1 / parseFloat(veri.Oran) || 0
           }
         })
         
         setExchangeRates(filtered)
         
-        // Altın fiyatlarını API'den al
-        try {
-          const goldResponse = await fetch('https://api.metals.live/v1/spot/gold')
-          const goldData = await goldResponse.json()
-          
-          // XAU (ons cinsinden) USD fiyatı
-          const xauUsd = goldData.gold.usd || 2000
-          // USD'den TRY'ye çevir
-          const usdToTry = data.rates.USD || 35
-          // Gram cinsinden TRY fiyatı (1 ons = 31.1035 gram)
-          const gramPrice = (xauUsd * usdToTry) / 31.1035
-          
-          // Standart altın türleri (gram cinsinden ağırlıkları)
+        // Altın fiyatını TCMB'den al (XAU TRY cinsinden)
+        const xauData = veriler.find(v => v.Code === 'XAU')
+        if (xauData) {
+          const gramPrice = parseFloat(xauData.Oran) / 31.1035
           setGoldPrices({
-            gram: Math.round(gramPrice * 100) / 100, // 1 gram
-            ceyrek: Math.round(gramPrice * 7.776 * 100) / 100, // 1/4 ons = 7.776g
-            yarim: Math.round(gramPrice * 15.552 * 100) / 100, // 1/2 ons = 15.552g
-            tam: Math.round(gramPrice * 31.1035 * 100) / 100, // 1 ons = 31.1035g (full ons)
-            cumhuriyet: Math.round(gramPrice * 32 * 100) / 100, // ~32g (historical coin)
-            ata: Math.round(gramPrice * 32 * 100) / 100 // ~32g (historical coin)
+            gram: Math.round(gramPrice * 100) / 100,
+            ceyrek: Math.round(gramPrice * 7.776 * 100) / 100,
+            yarim: Math.round(gramPrice * 15.552 * 100) / 100,
+            tam: Math.round(gramPrice * 31.1035 * 100) / 100,
+            cumhuriyet: Math.round(gramPrice * 32 * 100) / 100,
+            ata: Math.round(gramPrice * 32 * 100) / 100
           })
-        } catch (goldErr) {
-          console.error('Altın fiyatları alınamadı:', goldErr)
-          // Hata durumunda mock values kullan
+        } else {
+          // Hata durumunda fallback değerler
           setGoldPrices({
             gram: 2800,
             ceyrek: 21774,
@@ -187,6 +186,15 @@ function App() {
       } catch (err) {
         setError('Döviz kurları yüklenirken hata oluştu')
         console.error(err)
+        // Fallback values
+        setGoldPrices({
+          gram: 2800,
+          ceyrek: 21774,
+          yarim: 43509,
+          tam: 87062,
+          cumhuriyet: 89600,
+          ata: 89600
+        })
       } finally {
         setLoading(false)
       }
