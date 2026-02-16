@@ -686,20 +686,7 @@ function App() {
                         dataKey="rate" 
                         stroke="#667eea" 
                         strokeWidth={3}
-                        dot={(props) => {
-                          const { cx, cy, payload } = props
-                          const isSelectable = zoomStart === payload.index || zoomEnd === payload.index
-                          return (
-                            <circle
-                              cx={cx}
-                              cy={cy}
-                              r={isSelectable ? 7 : 4}
-                              fill={isSelectable ? '#f5d547' : '#667eea'}
-                              onClick={() => handleChartDotClick(payload)}
-                              style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
-                            />
-                          )
-                        }}
+                        dot={{ fill: '#667eea', r: 4 }}
                         activeDot={{ r: 6 }}
                         name={`1 ${selectedCurrency} = ? TRY`}
                       />
