@@ -2,45 +2,22 @@ import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import './App.css'
 
-// Mock veriler oluştur
-const generateMockData = (currency, days) => {
+// Mock veriler oluştur - API'den gelen base rate'i kullan
+const generateMockData = (currency, days, baseRate) => {
   const data = []
   
-  // Her para birimine ait gerçekçi temel oranlar
-  const baseRates = {
-    USD: 32.5,
-    EUR: 35.8,
-    GBP: 40.2,
-    JPY: 0.22,
-    CHF: 37.1,
-    CAD: 24.3,
-    AUD: 21.5,
-    NZD: 19.8,
-    CNY: 4.5,
-    INR: 0.39,
-    SAR: 8.7,
-    AED: 8.9,
-    SEK: 3.1,
-    NOK: 3.0,
-    DKK: 4.8,
-    KWD: 105.5,
-    QAR: 8.95,
-    OMR: 84.3,
-    BHD: 86.5,
-  }
-  
-  const baseRate = baseRates[currency] || 30
+  const rate = baseRate || 30
   
   for (let i = days; i >= 0; i--) {
     const date = new Date()
     date.setDate(date.getDate() - i)
     // Günlük varyans %1-2 arasında
     const variancePercent = (Math.random() - 0.5) * 0.02
-    const variance = baseRate * variancePercent
+    const variance = rate * variancePercent
     data.push({
       date: date.toLocaleDateString('tr-TR', { month: '2-digit', day: '2-digit' }),
       fullDate: date.toLocaleDateString('tr-TR'),
-      rate: parseFloat((baseRate + variance).toFixed(4))
+      rate: parseFloat((rate + variance).toFixed(4))
     })
   }
   return data
@@ -120,10 +97,10 @@ function App() {
   }
 
   const chartData = timeframe === 'weekly' 
-    ? generateMockData(selectedCurrency, 7) 
+    ? generateMockData(selectedCurrency, 7, exchangeRates[selectedCurrency])
     : timeframe === 'monthly'
-    ? generateMockData(selectedCurrency, 30)
-    : generateMockData(selectedCurrency, 365)
+    ? generateMockData(selectedCurrency, 30, exchangeRates[selectedCurrency])
+    : generateMockData(selectedCurrency, 365, exchangeRates[selectedCurrency])
 
   return (
     <div className="app">
