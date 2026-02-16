@@ -97,10 +97,10 @@ function App() {
   }
 
   const chartData = timeframe === 'weekly' 
-    ? generateMockData(selectedCurrency, 7, exchangeRates[selectedCurrency])
+    ? generateMockData(selectedCurrency, 7, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0)
     : timeframe === 'monthly'
-    ? generateMockData(selectedCurrency, 30, exchangeRates[selectedCurrency])
-    : generateMockData(selectedCurrency, 365, exchangeRates[selectedCurrency])
+    ? generateMockData(selectedCurrency, 30, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0)
+    : generateMockData(selectedCurrency, 365, exchangeRates[selectedCurrency] > 0 ? 1 / exchangeRates[selectedCurrency] : 0)
 
   return (
     <div className="app">
@@ -324,9 +324,9 @@ function App() {
 
                 <div className="chart-container">
                   <div className="chart-info">
-                    <h3>1 TRY = {selectedCurrency} (Son Veriler)</h3>
+                    <h3>1 {selectedCurrency} = {exchangeRates[selectedCurrency] > 0 ? (1 / exchangeRates[selectedCurrency]).toFixed(2) : '0'} TRY (Son Veriler)</h3>
                     <p className="current-rate">
-                      Mevcut Kur: {exchangeRates[selectedCurrency].toFixed(4)} {selectedCurrency}
+                      Mevcut Kur: {exchangeRates[selectedCurrency] > 0 ? (1 / exchangeRates[selectedCurrency]).toFixed(4) : '0'} TRY
                     </p>
                   </div>
 
@@ -362,7 +362,7 @@ function App() {
                         strokeWidth={3}
                         dot={{ fill: '#667eea', r: 4 }}
                         activeDot={{ r: 6 }}
-                        name={`${selectedCurrency} Kuru`}
+                        name={`1 ${selectedCurrency} = ? TRY`}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -371,19 +371,19 @@ function App() {
                     <div className="stat">
                       <span className="stat-label">En Yüksek:</span>
                       <span className="stat-value">
-                        {Math.max(...chartData.map(d => d.rate)).toFixed(4)} {selectedCurrency}
+                        {Math.max(...chartData.map(d => d.rate)).toFixed(4)} TRY
                       </span>
                     </div>
                     <div className="stat">
                       <span className="stat-label">En Düşük:</span>
                       <span className="stat-value">
-                        {Math.min(...chartData.map(d => d.rate)).toFixed(4)} {selectedCurrency}
+                        {Math.min(...chartData.map(d => d.rate)).toFixed(4)} TRY
                       </span>
                     </div>
                     <div className="stat">
                       <span className="stat-label">Ortalama:</span>
                       <span className="stat-value">
-                        {(chartData.reduce((sum, d) => sum + d.rate, 0) / chartData.length).toFixed(4)} {selectedCurrency}
+                        {(chartData.reduce((sum, d) => sum + d.rate, 0) / chartData.length).toFixed(4)} TRY
                       </span>
                     </div>
                   </div>
