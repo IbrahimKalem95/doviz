@@ -158,8 +158,8 @@ function App() {
           
           // XAU (ons cinsinden) USD fiyatı
           const xauUsd = goldData.gold?.usd || 2000
-          // USD'den TRY'ye çevir
-          const usdToTry = data.rates.USD || 35
+          // USD'den TRY'ye çevir (data.rates.USD = 1 TRY = ? USD, biz tersini istiyoruz)
+          const usdToTry = data.rates.USD > 0 ? 1 / data.rates.USD : 35
           // Gram cinsinden TRY fiyatı (1 ons = 31.1035 gram)
           const gramPrice = (xauUsd * usdToTry) / 31.1035
           
