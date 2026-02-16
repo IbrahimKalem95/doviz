@@ -137,31 +137,32 @@ function App() {
       try {
         setLoading(true)
         
-        // TCMB'den kurlar ve altın fiyatını al
-        const tcmbResponse = await fetch('https://www.tcmb.gov.tr/kurlar/today.json')
-        const tcmbData = await tcmbResponse.json()
-        
-        // TCMB verisinde Veriler içinde para birimleri bulunuyor
-        const veriler = tcmbData.Veriler || []
+        // ExchangeRate API'den kurları al
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/TRY')
+        const data = await response.json()
         
         // İstediğimiz para birimlerini filtrele
         const filtered = { TRY: 1 }
-        const currenciesToFind = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNY', 'INR', 'SAR', 'AED', 'SEK', 'NOK', 'DKK', 'KWD', 'QAR', 'OMR', 'BHD']
-        
-        veriler.forEach(veri => {
-          if (currenciesToFind.includes(veri.Code)) {
-            // TCMB'de oran TRY cinsinden verilir (1 USD = 35.68 TRY)
-            // Biz bunu tersine çeviririz (1 TRY = ? USD)
-            filtered[veri.Code] = 1 / parseFloat(veri.Oran) || 0
+        Object.keys(exchangeRates).forEach(currency => {
+          if (currency !== 'TRY') {
+            filtered[currency] = data.rates[currency] || 0
           }
         })
         
         setExchangeRates(filtered)
         
-        // Altın fiyatını TCMB'den al (XAU TRY cinsinden)
-        const xauData = veriler.find(v => v.Code === 'XAU')
-        if (xauData) {
-          const gramPrice = parseFloat(xauData.Oran) / 31.1035
+        // Altın fiyatı: XAU/USD'den TRY'ye çevir
+        try {
+          const goldResponse = await fetch('https://api.metals.live/v1/spot/gold')
+          const goldData = await goldResponse.json()
+          
+          // XAU (ons cinsinden) USD fiyatı
+          const xauUsd = goldData.gold?.usd || 2000
+          // USD'den TRY'ye çevir
+          const usdToTry = data.rates.USD || 35
+          // Gram cinsinden TRY fiyatı (1 ons = 31.1035 gram)
+          const gramPrice = (xauUsd * usdToTry) / 31.1035
+          
           setGoldPrices({
             gram: Math.round(gramPrice * 100) / 100,
             ceyrek: Math.round(gramPrice * 7.776 * 100) / 100,
@@ -170,8 +171,9 @@ function App() {
             cumhuriyet: Math.round(gramPrice * 32 * 100) / 100,
             ata: Math.round(gramPrice * 32 * 100) / 100
           })
-        } else {
-          // Hata durumunda fallback değerler
+        } catch (goldErr) {
+          console.warn('Altın fiyatları alınamadı, fallback kullanılıyor:', goldErr)
+          // Fallback
           setGoldPrices({
             gram: 2800,
             ceyrek: 21774,
@@ -184,9 +186,9 @@ function App() {
         
         setError(null)
       } catch (err) {
-        setError('Döviz kurları yüklenirken hata oluştu')
-        console.error(err)
-        // Fallback values
+        setError('Döviz kurları yüklenirken hata oluştu. Lütfen sayfayı yenileyiniz.')
+        console.error('API Error:', err)
+        // Fallback altın fiyatları
         setGoldPrices({
           gram: 2800,
           ceyrek: 21774,
