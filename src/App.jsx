@@ -266,7 +266,6 @@ function App() {
 
                 <div className="rates-list">
                   {Object.entries(exchangeRates)
-                    .filter(([currency]) => currency !== baseCurrency)
                     .map(([currency, rate]) => {
                       let displayRate, calculation;
                       
